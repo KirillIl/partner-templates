@@ -1173,7 +1173,7 @@
     }
 
     async function loadCloudData() {
-      if (!TEMPLATES_API_URL || TEMPLATES_API_URL.indexOf('https://script.google.com/macros/s/AKfycbxB7yxRPphkO-hy_V4dN3oPyeY__wj_YwrvWKs35bVX2EjdafmjAfS-V2EpMq1jaEfF/exec') === 0) return;
+      if (!TEMPLATES_API_URL) return;
       try {
         const res = await fetch(TEMPLATES_API_URL);
         const data = await res.json();
@@ -1776,7 +1776,7 @@
 
     addTemplateForm.onsubmit = function(e) {
       e.preventDefault();
-      if (!TEMPLATES_API_URL || TEMPLATES_API_URL.indexOf('https://script.google.com/macros/s/AKfycbxB7yxRPphkO-hy_V4dN3oPyeY__wj_YwrvWKs35bVX2EjdafmjAfS-V2EpMq1jaEfF/exec') === 0) {
+      if (!TEMPLATES_API_URL) {
         addTemplateResult.innerHTML = '<p style="color:var(--primary-red);">⚠️ Общее хранилище ещё не настроено. Обратитесь к администратору инструмента.</p>';
         return;
       }
@@ -1842,7 +1842,7 @@
 
     editTemplateForm.onsubmit = function(e) {
       e.preventDefault();
-      if (!TEMPLATES_API_URL || TEMPLATES_API_URL.indexOf('https://script.google.com/macros/s/AKfycbxB7yxRPphkO-hy_V4dN3oPyeY__wj_YwrvWKs35bVX2EjdafmjAfS-V2EpMq1jaEfF/exec') === 0) {
+      if (!TEMPLATES_API_URL) {
         editTemplateResult.innerHTML = '<p style="color:var(--primary-red);">⚠️ Общее хранилище ещё не настроено. Обратитесь к администратору инструмента.</p>';
         return;
       }
@@ -1898,7 +1898,7 @@
 
     deleteTemplateForm.onsubmit = function(e) {
       e.preventDefault();
-      if (!TEMPLATES_API_URL || TEMPLATES_API_URL.indexOf('https://script.google.com/macros/s/AKfycbxB7yxRPphkO-hy_V4dN3oPyeY__wj_YwrvWKs35bVX2EjdafmjAfS-V2EpMq1jaEfF/exec') === 0) {
+      if (!TEMPLATES_API_URL) {
         deleteTemplateResult.innerHTML = '<p style="color:var(--primary-red);">⚠️ Общее хранилище ещё не настроено. Обратитесь к администратору инструмента.</p>';
         return;
       }
@@ -1951,7 +1951,7 @@
 
     addRegionForm.onsubmit = function(e) {
       e.preventDefault();
-      if (!TEMPLATES_API_URL || TEMPLATES_API_URL.indexOf('https://script.google.com/macros/s/AKfycbxB7yxRPphkO-hy_V4dN3oPyeY__wj_YwrvWKs35bVX2EjdafmjAfS-V2EpMq1jaEfF/exec') === 0) {
+      if (!TEMPLATES_API_URL) {
         addRegionResult.innerHTML = '<p style="color:var(--primary-red);">⚠️ Общее хранилище ещё не настроено. Обратитесь к администратору инструмента.</p>';
         return;
       }
