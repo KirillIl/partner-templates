@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Партнёрский канал – Шаблоны + Пасхалки</title>
   <style>
-    /* ===== СТИЛИ (полностью без изменений) ===== */
     * {
       margin: 0;
       padding: 0;
@@ -408,8 +407,8 @@
     .variant-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 18px; padding: 20px 22px; transition: 0.2s; }
     .variant-text { line-height: 1.7; white-space: pre-wrap; font-size: 0.95rem; color: var(--text); }
     .variant-text .search-highlight { background: var(--highlight-bg); padding: 0 2px; border-radius: 2px; }
-    .copy-wrapper { margin-top: 16px; text-align: right; }
-    .copy-btn {
+    .copy-wrapper { margin-top: 16px; text-align: right; display: flex; justify-content: flex-end; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .copy-btn, .edit-btn {
       background: var(--card-bg);
       border: 1px solid var(--border);
       padding: 6px 14px;
@@ -425,7 +424,52 @@
     }
     .copy-btn:hover { background: var(--primary-blue); color: white; }
     .copy-btn.copied { background: var(--primary-green); color: white; }
+    .edit-btn { color: var(--primary-violet); }
+    .edit-btn:hover { background: var(--primary-violet); color: white; }
     .empty-state { text-align: center; padding: 40px; color: var(--text-secondary); }
+    .meta-info { font-size: 0.78rem; color: var(--text-secondary); margin-top: 10px; display: flex; align-items: center; gap: 6px; }
+
+    .add-template-btn {
+      background: var(--primary-green);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 40px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: 0.2s;
+    }
+    .add-template-btn:hover { filter: brightness(1.05); transform: translateY(-1px); }
+
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 0.92rem; }
+    .form-group select, .form-group input[type="text"], .form-group textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--card-bg);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.92rem;
+    }
+    .form-group textarea { resize: vertical; }
+    .form-submit-btn {
+      background: var(--primary-green);
+      color: white;
+      border: none;
+      padding: 10px 22px;
+      border-radius: 40px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .form-submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .form-error { color: var(--primary-red); font-size: 0.8rem; margin-top: 4px; display: none; }
+    .form-group.error select, .form-group.error input, .form-group.error textarea { border-color: var(--primary-red); }
+    .form-group.error .form-error { display: block; }
 
     .feedback-modal .modal-content { max-width: 500px; }
     .feedback-form-group { margin-bottom: 20px; position: relative; }
@@ -573,10 +617,14 @@
 
   <!-- ===== ОСНОВНАЯ ПАНЕЛЬ ===== -->
   <div class="dashboard">
-    <div class="section-title"><span class="title-icon">📂</span><span class="title-text">Рабочие шаблоны</span></div>
+    <div class="section-title" style="justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+      <span style="display:flex; align-items:center; gap:8px;"><span class="title-icon">📂</span><span class="title-text">Рабочие шаблоны</span></span>
+      <button class="add-template-btn" id="addTemplateBtn">➕ Добавить шаблон</button>
+    </div>
 
     <div class="filters-row">
       <span class="filter-label">📍 Регион:</span>
+      <button type="button" id="addRegionBtn" style="background:none; border:1px dashed var(--border); padding:6px 12px; border-radius:30px; font-size:0.8rem; cursor:pointer; color:var(--text-secondary);">+ Добавить регион</button>
       <div class="custom-dropdown" id="regionDropdown">
         <button class="dropdown-btn" id="dropdownBtn">
           <span id="selectedRegion">Выберите регион</span>
@@ -584,12 +632,12 @@
         </button>
         <div class="dropdown-menu" id="dropdownMenu">
           <div class="dropdown-item active" data-value="">— Выберите регион —</div>
-          <div class="dropdown-item" data-value="msk">🏙️ Москва</div>
           <div class="dropdown-item" data-value="kzn">🏙️ Казань</div>
           <div class="dropdown-item" data-value="ufa">🏙️ Уфа</div>
           <div class="dropdown-item" data-value="ekb">🏙️ Екатеринбург</div>
           <div class="dropdown-item" data-value="vrn">🏙️ Воронеж</div>
           <div class="dropdown-item" data-value="ros">🏙️ Ростов-на-Дону</div>
+          <div class="dropdown-item" data-value="msk">🏙️ Москва</div>
         </div>
       </div>
       <div class="search-box"><span>🔍</span><input type="text" id="searchTopicsInput" placeholder="Поиск по названию или тексту шаблона..." /></div>
@@ -628,6 +676,128 @@
             <button data-card="accent" class="settings-btn-opt" style="background:var(--card-bg); border:1px solid var(--border); padding:8px 16px; border-radius:40px; cursor:pointer;">Акцентная полоса</button>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ДОБАВИТЬ ШАБЛОН ===== -->
+  <div id="addTemplateModal" class="modal-overlay" style="display:none;">
+    <div class="modal-content" style="max-width:600px;">
+      <div class="modal-header"><h2>➕ Добавить шаблон</h2><button class="modal-close" id="addTemplateModalClose">✕</button></div>
+      <div class="modal-body">
+        <form id="addTemplateForm">
+          <div class="form-group" id="atStageGroup">
+            <label>Этап <span class="required-star">*</span></label>
+            <select id="atStage">
+              <option value="">— Выберите этап —</option>
+              <option value="Фиксация">Фиксация</option>
+              <option value="Бронирование">Бронирование</option>
+              <option value="Сделка">Сделка</option>
+            </select>
+            <div class="form-error">Выберите этап</div>
+          </div>
+          <div class="form-group" id="atRegionGroup">
+            <label>Регион <span class="required-star">*</span></label>
+            <select id="atRegion">
+              <option value="">— Выберите регион —</option>
+              <option value="ekb">Екатеринбург</option>
+              <option value="msk">Москва</option>
+              <option value="ufa">Уфа</option>
+              <option value="kzn">Казань</option>
+              <option value="ros">Ростов-на-Дону</option>
+              <option value="vrn">Воронеж</option>
+              <option value="all">Все регионы</option>
+            </select>
+            <div class="form-error">Выберите регион</div>
+          </div>
+          <div class="form-group" id="atAuthorGroup">
+            <label>Ваше ФИО <span class="required-star">*</span></label>
+            <input type="text" id="atAuthor" placeholder="Иванов Иван Иванович" />
+            <div class="form-error">Заполните ФИО</div>
+          </div>
+          <div class="form-group" id="atTopicGroup">
+            <label>Тема шаблона <span class="required-star">*</span></label>
+            <input type="text" id="atTopic" placeholder="Например: Запрос паспортных данных" />
+            <div class="form-error">Заполните тему</div>
+          </div>
+          <div class="form-group" id="atTextGroup">
+            <label>Текст шаблона <span class="required-star">*</span></label>
+            <textarea id="atText" rows="6" placeholder="Текст сообщения клиенту/агенту..."></textarea>
+            <div class="form-error">Заполните текст шаблона</div>
+          </div>
+          <button type="submit" class="form-submit-btn" id="atSubmitBtn">Добавить</button>
+        </form>
+        <div id="addTemplateResult"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== РЕДАКТИРОВАТЬ ШАБЛОН ===== -->
+  <div id="editTemplateModal" class="modal-overlay" style="display:none;">
+    <div class="modal-content" style="max-width:600px;">
+      <div class="modal-header"><h2>✏️ Редактировать шаблон</h2><button class="modal-close" id="editTemplateModalClose">✕</button></div>
+      <div class="modal-body">
+        <form id="editTemplateForm">
+          <div class="form-group" id="etAuthorGroup">
+            <label>Ваше ФИО <span class="required-star">*</span></label>
+            <input type="text" id="etAuthor" placeholder="Иванов Иван Иванович" />
+            <div class="form-error">Заполните ФИО</div>
+          </div>
+          <div class="form-group" id="etTextGroup">
+            <label>Текст шаблона <span class="required-star">*</span></label>
+            <textarea id="etText" rows="8"></textarea>
+            <div class="form-error">Текст не может быть пустым</div>
+          </div>
+          <button type="submit" class="form-submit-btn" id="etSubmitBtn">Сохранить</button>
+        </form>
+        <div id="editTemplateResult"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== УДАЛИТЬ ТЕМУ ===== -->
+  <div id="deleteTemplateModal" class="modal-overlay" style="display:none;">
+    <div class="modal-content" style="max-width:480px;">
+      <div class="modal-header"><h2>🗑 Удалить тему</h2><button class="modal-close" id="deleteTemplateModalClose">✕</button></div>
+      <div class="modal-body">
+        <p style="margin-bottom:16px; color:var(--text-secondary);">Тема будет скрыта для всех сотрудников. Это действие можно отменить только через администратора.</p>
+        <form id="deleteTemplateForm">
+          <div class="form-group" id="dtAuthorGroup">
+            <label>Ваше ФИО <span class="required-star">*</span></label>
+            <input type="text" id="dtAuthor" placeholder="Иванов Иван Иванович" />
+            <div class="form-error">Заполните ФИО</div>
+          </div>
+          <button type="submit" class="form-submit-btn" id="dtSubmitBtn" style="background:var(--primary-red);">Удалить тему</button>
+        </form>
+        <div id="deleteTemplateResult"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ДОБАВИТЬ РЕГИОН ===== -->
+  <div id="addRegionModal" class="modal-overlay" style="display:none;">
+    <div class="modal-content" style="max-width:480px;">
+      <div class="modal-header"><h2>📍 Добавить регион</h2><button class="modal-close" id="addRegionModalClose">✕</button></div>
+      <div class="modal-body">
+        <form id="addRegionForm">
+          <div class="form-group" id="arNameGroup">
+            <label>Название региона <span class="required-star">*</span></label>
+            <input type="text" id="arName" placeholder="Например: Новосибирск" />
+            <div class="form-error">Заполните название</div>
+          </div>
+          <div class="form-group" id="arCodeGroup">
+            <label>Короткий код <span class="required-star">*</span></label>
+            <input type="text" id="arCode" placeholder="Например: nsk (латиницей, без пробелов)" />
+            <div class="form-error">Заполните код (латиницей, без пробелов)</div>
+          </div>
+          <div class="form-group" id="arAuthorGroup">
+            <label>Ваше ФИО <span class="required-star">*</span></label>
+            <input type="text" id="arAuthor" placeholder="Иванов Иван Иванович" />
+            <div class="form-error">Заполните ФИО</div>
+          </div>
+          <button type="submit" class="form-submit-btn" id="arSubmitBtn">Добавить регион</button>
+        </form>
+        <div id="addRegionResult"></div>
       </div>
     </div>
   </div>
@@ -673,7 +843,7 @@
     // ================================================================
     // 1. ДАТА ПОСЛЕДНЕГО ОБНОВЛЕНИЯ
     // ================================================================
-    const LAST_UPDATED = document.lastModified ? new Date(document.lastModified).toLocaleDateString('ru-RU') : '16.09.2026';
+    const LAST_UPDATED = document.lastModified ? new Date(document.lastModified).toLocaleDateString('ru-RU') : '05.07.2026';
     // ================================================================
 
     // ================================================================
@@ -686,21 +856,30 @@
     const FORM_ACTION_URL = 'https://docs.google.com/forms/u/0/d/e/1FAIpQLSeNfrjNHwba97NTS9xbhqYJyEH1QKOREfjVRMGjTV9i7EKblg/formResponse';
     // ================================================================
 
+    // ================================================================
+    // 2.1 ОБЩЕЕ ХРАНИЛИЩЕ ШАБЛОНОВ (Google Apps Script Web App)
+    // Замените строку ниже на URL вашего развернутого веб-приложения
+    // (см. инструкцию по настройке). Пока URL не указан, кнопки
+    // "Добавить шаблон" / "Редактировать" будут показывать предупреждение.
+    // ================================================================
+    const TEMPLATES_API_URL = 'https://script.google.com/macros/s/AKfycbxB7yxRPphkO-hy_V4dN3oPyeY__wj_YwrvWKs35bVX2EjdafmjAfS-V2EpMq1jaEfF/exec';
+    // ================================================================
+
     // ========== ССЫЛКИ ДЛЯ ТЕМЫ "Акции файл" ПО РЕГИОНАМ ==========
     const regionFileLinks = {
-      'kzn': 'Добавить позже',
-      'ekb': 'Добавить позже',
-      'ros': 'Добавить позже',
-      'ufa': 'Добавить позже',
-      'vrn': 'Добавить позже'
+      'kzn': 'https://docs.google.com/spreadsheets/d/16xT88vb4sAAlXD7lfmMobh6PfsDC9gB3WONZ9exGslM/edit?gid=0#gid=0',
+      'ekb': 'https://docs.google.com/spreadsheets/d/1JWcZVmuYSo9l1g1wRt0AhJRrEyeNprsdb1snrOrL21k/edit?gid=944436907#gid=944436907',
+      'ros': 'https://docs.google.com/spreadsheets/d/10ikUxcOX0fskwIunLxMObLETH1ekfwDqrDPKBVK8-jg/edit?gid=84083378#gid=84083378',
+      'ufa': 'https://docs.google.com/spreadsheets/d/1rjpSL_yl5TIa0bmmcvnd5EFgvIrVmKXbU9jPVTLFrD0/edit?gid=2002780521#gid=2002780521',
+      'vrn': 'https://docs.google.com/spreadsheets/d/1qHn02iaYyxe4PBr3L8fuO0NxqM3yVofMCK2vs6yiVN4/edit?gid=223348282#gid=223348282'
     };
     // ================================================================
 
     // ========== ШАБЛОНЫ ==========
     const defaultTemplates = [
       { text: `Добрый день, (Имя агента)!\nУже отправили застройщику ваши документы, чтобы рассчитать и согласовать вознаграждение.\n\n📅По срокам: мы всегда стараемся уложиться в 3–5 рабочих дней, но зависит от застройщика.\nКак только получим подтверждение и расчет — сразу же вернемся к вам для финального согласования!\n\n🚀Сделка в копилку! Поздравляем и говорим спасибо за классную работу!`, usage: 0 },
-      { text: `Добрый день, (ИМЯ агента)!\n\nПоздравляем с успешной сделкой — отличный результат 🎉 Комиссию уже запустили в обработку, обычно укладываемся в 3–5 рабочих дней, дальше срок зависит от застройщика.\n\nПодскажите, пожалуйста:\n\nВы плательщик НДС?\n\nКакую дату оплаты юр. услуг зафиксировать?`, usage: 0 },
-      { text: `Добрый день, (ИМЯ агента)!\n\nПоздравляем с успешной сделкой 🎉 \nДокументы в работе, запускаем выплату. \n\nПо срокам ориентируемся на 3–5 рабочих дней, дальше всё зависит от согласования у застройщика. \n\n🔸 Нужно уточнить являетесь ли плательщиком НДС и какую дату оплаты юридических услуг зафиксировать?`, usage: 0 }
+      { text: `Добрый день, (ИМЯ агента)!\n\nПоздравляем с успешной сделкой — отличный результат 🎉 Комиссию уже запустили в обработку, обычно укладываемся в 3–5 рабочих дней, дальше срок зависит от застройщика.\n\nПодскажите, пожалуйста:\n\nВы плательщик НДС и нужно ли указать ФИО агента в назначении платежа?\n\nКакую дату оплаты юр. услуг зафиксировать?`, usage: 0 },
+      { text: `Добрый день, (ИМЯ агента)!\n\nПоздравляем с успешной сделкой 🎉 \nДокументы в работе, запускаем выплату. \n\nПо срокам ориентируемся на 3–5 рабочих дней, дальше всё зависит от согласования у застройщика. \n\n🔸 Нужно уточнить: являетесь ли плательщиком НДС, указывать ли ФИО агента в назначении платежа и какую дату оплаты юридических услуг зафиксировать?`, usage: 0 }
     ];
 
     const ufaTemplates = [
@@ -726,17 +905,17 @@
         {
           name: 'Фиксация новая',
           templates: [
-            { text: `Добрый день, (Имя агента)!\n\nПока ожидаем ответ застройщика, подскажите, какая форма оплаты планируется у клиента? Если ипотека — можем передать в ипотечный сервис для подбора программы и быстрой отправки заявок в банки. 🏦 \n\nДЛЯ МЕНЕДЖЕРОВ: направляем картинку акцию для агентов "Оформите страхование - получите 1500 Р + до 60% от страховой премии."`, usage: 0 },
-            { text: `Добрый день, (Имя агента)!\n\nКлиент определился с формой оплаты? Если ипотека — мы можем передать на ипотечный сервис, чтобы подобрать программу, быстро подать заявки в банки. 💰📈 \n\nДЛЯ МЕНЕДЖЕРОВ: направляем картинку акцию для агентов "Оформите страхование - получите 1500 Р + до 60% от страховой премии.`, usage: 0 },
-            { text: `Добрый день, партнер! 😊\n\nА пока мы ждём - уточните, пожалуйста, какая форма оплаты у клиента? \nЕсли рассматриваете ипотеку — рекомендуем наш ипотечный сервис. Это значительно сэкономит ваше время: коллеги подберут программу, подадут заявки в банки и доведут клиента до одобрения. 🤗 \n\nДЛЯ МЕНЕДЖЕРОВ: направляем картинку акцию для агентов "Оформите страхование - получите 1500 Р + до 60% от страховой премии.`, usage: 0 }
+            { text: `Добрый день, (Имя агента)!\n\nПока ожидаем ответ застройщика, подскажите, какая форма оплаты планируется у клиента? Если ипотека — можем передать в ипотечный сервис для подбора программы и быстрой отправки заявок в банки. 🏦`, usage: 0 },
+            { text: `Добрый день, (Имя агента)!\n\nКлиент определился с формой оплаты? Если ипотека — мы можем передать на ипотечный сервис, чтобы подобрать программу, быстро подать заявки в банки. 💰📈`, usage: 0 },
+            { text: `Добрый день, партнер! 😊\n\nА пока мы ждём - уточните, пожалуйста, какая форма оплаты у клиента? \nЕсли рассматриваете ипотеку — рекомендуем наш ипотечный сервис. Это значительно сэкономит ваше время: коллеги подберут программу, подадут заявки в банки и доведут клиента до одобрения. 🤗`, usage: 0 }
           ]
         },
         {
           name: 'Фиксация новая (несколько заявок)',
           templates: [
-            { text: 'Добрый день, уважаемый партнер!\n\nБлагодарим вас за заявки - мы уже приняли их в работу и активно взаимодействуем с застройщиком для проверки всех данных.\nТакже подскажите, пожалуйста, какая форма оплаты планируется у клиента? \n\nДЛЯ МЕНЕДЖЕРОВ: направляем картинку акцию для агентов "Оформите страхование - получите 1500 Р + до 60% от страховой премии.', usage: 0 },
-            { text: 'Добрый день, (Имя агента)! \n\nЗаявки приняты в работу, проверяем данные с застройщиком. \nУточните, пожалуйста, форму оплаты, которую планирует клиент. \nСпасибо. \n\nДЛЯ МЕНЕДЖЕРОВ: направляем картинку акцию для агентов "Оформите страхование - получите 1500 Р + до 60% от страховой премии.', usage: 0 },
-            { text: 'Добрый день, (Имя агента)! \n\nСпасибо за заявки, мы уже взяли их в работу. Скоро пришлём вам детали и информацию по комиссионному вознаграждению. \nА пока мы ожидаем ответ, подскажите, пожалуйста, какая форма оплаты планируется у клиента? \n\nДЛЯ МЕНЕДЖЕРОВ: направляем картинку акцию для агентов "Оформите страхование - получите 1500 Р + до 60% от страховой премии.', usage: 0 }
+            { text: 'Добрый день, уважаемый партнер!\n\nБлагодарим вас за заявки - мы уже приняли их в работу и активно взаимодействуем с застройщиком для проверки всех данных.\nТакже подскажите, пожалуйста, какая форма оплаты планируется у клиента?', usage: 0 },
+            { text: 'Добрый день, (Имя агента)! \n\nЗаявки приняты в работу, проверяем данные с застройщиком. \nУточните, пожалуйста, форму оплаты, которую планирует клиент. \nСпасибо.', usage: 0 },
+            { text: 'Добрый день, (Имя агента)! \n\nСпасибо за заявки, мы уже взяли их в работу. Скоро пришлём вам детали и информацию по комиссионному вознаграждению. \nА пока мы ожидаем ответ, подскажите, пожалуйста, какая форма оплаты планируется у клиента?', usage: 0 }
           ]
         },
         {
@@ -899,7 +1078,7 @@
           templates: [
             { text: `Добрый день, (ИМЯ агента)!\n\nСпасибо за оперативный отклик! 🔥\nУже передали информацию в бухгалтерию — процесс пошел 🚀\nВажный момент: выплаты осуществляются с понедельника по четверг. Срок выплат — 1–2 рабочих дня.\n❗️Небольшой нюанс: межбанковские переводы могут занять некоторое время — всё зависит от скорости работы банков-участников.\nПоздравляем с успешным завершением сделки! 🏆`, usage: 0 },
             { text: `Добрый день, (ИМЯ агента)!\n\nСпасибо за оперативный отклик — с такими партнёрами процессы идут заметно быстрее 🤝\nИнформацию уже передали в бухгалтерию, запуск выплаты оформлен ⚡\n\nВыплаты производятся с понедельника по четверг, обычно это занимает 1–2 рабочих дня. Информируем, что межбанковские переводы могут идти дольше — это зависит от графика и скорости работы банков.\n\nПоздравляем с успешным завершением сделки! 🏆`, usage: 0 },
-            { text: `(ИМЯ агента), добрый день!\n\nБлагодарим за быстрый ответ — это помогает ускорять все финансовые процессы. \nВаши данные уже у бухгалтерии, сейчас платёж готовится к отправке. 💸\n\nВыплаты делаем с понедельника по четверг, стандартный срок — 1–2 рабочих дня. Возможна небольшая задержка из‑за межбанковских процедур, тут всё зависит от банков-участников.\n\nПоздравляем с закрытой сделкой и ещё одним результатом в вашу воронку! 🙌`, usage: 0 }
+            { text: `(ИМЯ агента), добрый день!\n\nБлагодарим за быстрый ответ — это помогает ускорять все финансовые процессы \nВаши данные уже у бухгалтерии, сейчас платёж готовится к отправке. 💸\n\nВыплаты делаем с понедельника по четверг, стандартный срок — 1–2 рабочих дня. Возможна небольшая задержка из‑за межбанковских процедур, тут всё зависит от банков-участников.\n\nПоздравляем с закрытой сделкой и ещё одним результатом в вашу воронку! 🙌`, usage: 0 }
           ]
         },
         {
@@ -913,7 +1092,7 @@
         {
           name: 'Запрос СФ у агента',
           templates: [
-            { text: `(Имя агента), добрый день! 😊\nПоскольку ИП/ООО является плательщиком НДС, по просьбе бухгалтерии просим вас выставить счёт-фактуру по клиенту: \n\nПросьба указать дату СФ: \nДокумент об отгрузке: \nСумма:   руб. \n\nЗастройщик: \nЮридический адрес застройщика: \nИНН/КПП:\n\nНаименование товара (столбец 1а): Услуги Принципала по поиску и привлечению клиентов согласно договору № \nПериод: \n\nЕсли у вас останутся вопросы, будем рады помочь!🤝`, usage: 0 },
+            { text: `(Имя агента), добрый день! 😊\nПо просьбе бухгалтерии просим вас выставить счёт-фактуру по клиенту: \nДату СФ просьба поставить от \nДокумент об отгрузке: Акт\nПериод:\nСумма:   руб. \nЗастройщик: \nЮридический адрес застройщика: \nИНН/КПП:\n№ и дата договора с застройщиком: \n\nЕсли у вас останутся вопросы, будем рады помочь!🤝`, usage: 0 },
             { text: 'Вариант 2 будет добавлен позже', usage: 0 },
             { text: 'Вариант 3 будет добавлен позже', usage: 0 }
           ]
@@ -937,17 +1116,17 @@
         {
           name: 'Если Д/с не поступили',
           templates: [
-            { text: `Добрый день, (Имя агента)!\nНа данный момент застройщик подтвердил расчёт, но поступление денежных средств на счёт ещё не подтвердил — ожидаем. \n\nЧтобы ускорить процесс выплаты, по возможности направьте, пожалуйста, любой удобный документ: \n • выписку ЕГРН; \n • финансовый документ — чек или выписку с эскроу-счёта; \n • ZIP-архив с электронными подписями формата SIG/SIGN, который приходит клиенту на почту после сделки. \n\nЭто позволит значительно ускорить процесс выплаты.`, usage: 0 },
-            { text: `Добрый день, (Имя)!\n\nЗастройщик подтвердил расчёт, но поступление денежных средств на счёт пока не подтвердил — ожидаем.\n\nЧтобы не задерживать выплату, по возможности направьте любой удобный вариант:\n • ЕГРН; \n• чек или документ по эскроу-счёту; \n • ZIP-архив с электронными подписями SIG/SIGN, полученный после сделки. \n\nПри наличии одного из этих документов мы сможем значительно быстрее провести выплату.`, usage: 0 },
-            { text: `Добрый день, (Имя)!\n\nЗастройщик расчёт подтвердил, сейчас ожидаем подтверждения поступления денежных средств на счёт.\nЕсли у вас уже есть один из документов, направьте, пожалуйста, любой удобный:\n• ЕГРН;\n• чек или документ по эскроу-счёту;\n• ZIP-архив с электронными подписями SIG/SIGN, который приходит на почту после сделки. \n\nЭто поможет нам ускорить процесс выплаты.`, usage: 0 }
+            { text: `Добрый день, (Имя агента)!\nВозвращаемся к вам с обратной связью. К сожалению, денежные средства еще не поступили застройщику. Если у вас будет возможность подгрузить пополненный эскроу-счет или чек об оплате, то это значительно ускорит процесс выплаты, так как информация от банка поступает застройщику дольше, чем клиенту. \n\nСледующая сверка с застройщиком по поступлению денежных средств состоится в пятницу. Мы обязательно вернемся к вам с обратной связью.`, usage: 0 },
+            { text: `Добрый день, (Имя)!\n\nМы только что проверили поступление денег от клиента. К сожалению, на счёт застройщика они пока не пришли – банковская информация иногда идёт с задержкой.\n\nЧтобы не ждать, пока банк передаст данные застройщику, вы можете ускорить процесс: если у вас есть пополненный эскроу-счёт или чек об оплате – пришлите их нам. Мы передадим документы застройщику напрямую, и выплата пройдёт быстрее.\n\nБлижайшая сверка с застройщиком – в пятницу. В этот день мы обязательно обновим информацию и напишем вам.\n\nЕсли есть вопросы – мы на связи.`, usage: 0 },
+            { text: `Добрый день, (Имя)!\n\nСредства от клиента пока не поступили застройщику – банковская информация иногда приходит с задержкой.\nЕсли направите нам выписку по эскроу или чек об оплате, мы передадим их застройщику и ускорим выплату.\nСледующая сверка – в пятницу, о результатах сообщим.\n\nБудем признательны за содействие.`, usage: 0 }
           ]
         },
         {
-          name: 'Постоплата.',
+          name: 'ЗС Самолёт. Постоплата.',
           templates: [
-            { text: `(Имя агента), также напоминаем, что с застройщиком «Название застройщика» мы перешли на постоплатную систему расчета. Как только получим подтверждение от застройщика о поступлении средств на наш счёт, мы обязательно сообщим вам и сразу отправим заявку на выплату.🤝`, usage: 0 },
-            { text: `(Имя агента), добрый день! 😊\nСейчас с застройщиком «Название застройщика» мы работаем по постоплате.\nЭто значит, что мы сможем выплатить вам комиссию после выплаты от застройщика. Это не быстрый процесс, у которого нет точных сроков. Понимаем, что ожидаете длительное время, и как только мы получим средства от застройщика, сразу вам выплатим комиссию.🤝`, usage: 0 },
-            { text: `(Имя агента), добрый день!\nВажный момент по выплате: с застройщиком «Название застройщика» мы работаем по постоплате. Выплата вашей комиссии произойдет после поступления средств от застройщика на наш расчетный счет.\n\nКак только деньги поступят от застройщика, мы сразу же переведем их вам и обязательно напишем об этом. \nСпасибо за отличную работу! 😊`, usage: 0 }
+            { text: `(Имя агента), также напоминаем, что с застройщиком «Самолет» мы перешли на постоплатную систему расчета. Как только получим подтверждение от застройщика о поступлении средств на наш счёт, мы обязательно сообщим вам и сразу отправим заявку на выплату.🤝`, usage: 0 },
+            { text: `(Имя агента), добрый день! 😊\nСейчас с застройщиком «Самолет» мы работаем по постоплате.\nЭто значит, что мы сможем выплатить вам комиссию после выплаты от застройщика. Это не быстрый процесс, у которого нет точных сроков. Понимаем, что ожидаете длительное время, и как только мы получим средства от застройщика, сразу вам выплатим комиссию.🤝`, usage: 0 },
+            { text: `(Имя агента), добрый день!\nВажный момент по выплате: с застройщиком «Самолет» мы работаем по постоплате. Выплата вашей комиссии произойдет после поступления средств от застройщика на наш расчетный счет.\n\nКак только деньги поступят от застройщика, мы сразу же переведем их вам и обязательно напишем об этом. \nСпасибо за отличную работу! 😊`, usage: 0 }
           ]
         },
         {
@@ -976,6 +1155,69 @@
     let currentVariantIndex = 0;
     let topAnEnabled = false;
 
+    // ---- Общие (облачные) данные: новые темы, правки, удаления, регионы ----
+    let cloudCustomTopics = [];   // [{stage, region, name, text, author, date}]
+    let cloudEdits = {};          // key -> {text, author, date}
+    let cloudDeletedTopics = new Set(); // set of "stage|||topic|||region"
+    let cloudRegions = [];        // [{code, name, author, date}]
+
+    function editKey(stage, topicName, variantIndex, region) {
+      return `${stage}|||${topicName}|||${variantIndex}|||${region || ''}`;
+    }
+    function deleteTopicKey(stage, topicName, region) {
+      return `${stage}|||${topicName}|||${region || ''}`;
+    }
+    function isTopicDeleted(stage, topicName, region) {
+      return cloudDeletedTopics.has(deleteTopicKey(stage, topicName, region)) ||
+             cloudDeletedTopics.has(deleteTopicKey(stage, topicName, ''));
+    }
+
+    async function loadCloudData() {
+      if (!TEMPLATES_API_URL || TEMPLATES_API_URL.indexOf('https://script.google.com/macros/s/AKfycbxB7yxRPphkO-hy_V4dN3oPyeY__wj_YwrvWKs35bVX2EjdafmjAfS-V2EpMq1jaEfF/exec') === 0) return;
+      try {
+        const res = await fetch(TEMPLATES_API_URL);
+        const data = await res.json();
+        cloudCustomTopics = (data.newTopics || []);
+        cloudEdits = {};
+        (data.edits || []).forEach(e => {
+          cloudEdits[editKey(e.stage, e.topic, e.variantIndex, e.region)] = e;
+        });
+        cloudDeletedTopics = new Set((data.deletedTopics || []).map(d => deleteTopicKey(d.stage, d.topic, d.region)));
+        cloudRegions = (data.regions || []);
+        renderDynamicRegions();
+        renderStages();
+      } catch (err) {
+        console.warn('Не удалось загрузить общие шаблоны:', err);
+      }
+    }
+
+    function renderDynamicRegions() {
+      cloudRegions.forEach(r => {
+        if (!dropdownMenu.querySelector(`[data-value="${r.code}"]`)) {
+          const item = document.createElement('div');
+          item.className = 'dropdown-item';
+          item.dataset.value = r.code;
+          item.textContent = `🏙️ ${r.name}`;
+          dropdownMenu.appendChild(item);
+        }
+        const atRegionSelect = document.getElementById('atRegion');
+        if (atRegionSelect && !atRegionSelect.querySelector(`option[value="${r.code}"]`)) {
+          const opt = document.createElement('option');
+          opt.value = r.code;
+          opt.textContent = r.name;
+          atRegionSelect.insertBefore(opt, atRegionSelect.querySelector('option[value="all"]'));
+        }
+      });
+    }
+
+    function sendToCloud(payload) {
+      return fetch(TEMPLATES_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      });
+    }
+
     const stageContainer = document.getElementById('stageContainer');
     const topicsContainer = document.getElementById('topicsContainer');
     const templatesContainer = document.getElementById('templatesContainer');
@@ -991,13 +1233,29 @@
     const dropdownMenu = document.getElementById('dropdownMenu');
     const selectedRegionSpan = document.getElementById('selectedRegion');
 
+    function getCustomTopicsForStage(stage) {
+      return cloudCustomTopics
+        .filter(t => t.stage === stage)
+        .filter(t => !t.region || t.region === 'all' || t.region === currentRegion)
+        .filter(t => !isTopicDeleted(stage, t.name, t.region))
+        .map(t => ({
+          name: t.name,
+          templates: [{ text: t.text, usage: 0 }],
+          isCustom: true,
+          author: t.author,
+          date: t.date
+        }));
+    }
+
     function getCurrentTopics() {
       let topics = savedStages[currentStage] || [];
-      return topics.filter(t => {
+      let filtered = topics.filter(t => {
         if (t.region && t.region !== currentRegion) return false;
         if (t.name === 'Акции файл' && !currentRegion) return false;
+        if (isTopicDeleted(currentStage, t.name, currentRegion)) return false;
         return true;
       });
+      return filtered.concat(getCustomTopicsForStage(currentStage));
     }
 
     function updateTopAnStatus() {
@@ -1096,7 +1354,7 @@
       topics.forEach((t, i) => {
         const btn = document.createElement('button');
         btn.className = 'topic-btn' + (i === currentTopicIndex ? ' active' : '');
-        btn.textContent = t.name;
+        btn.textContent = (t.isCustom ? '🆕 ' : '') + t.name;
         btn.onclick = () => {
           currentTopicIndex = i;
           currentVariantIndex = 0;
@@ -1182,7 +1440,21 @@
       } else {
         displayText = currentVariant.text;
       }
+
+      // ---- Применяем правку из общего хранилища, если есть ----
+      const eKey = editKey(currentStage, topic.name, currentVariantIndex, currentRegion);
+      const edit = cloudEdits[eKey] || cloudEdits[editKey(currentStage, topic.name, currentVariantIndex, '')];
+      let metaHtml = '';
+      if (edit && !topic.isCustom) {
+        displayText = edit.text;
+        metaHtml = `<div class="meta-info">✏️ Изменено: ${escapeHtml(edit.author || '')}, ${escapeHtml(edit.date || '')}</div>`;
+      } else if (topic.isCustom) {
+        metaHtml = `<div class="meta-info">➕ Добавлено: ${escapeHtml(topic.author || '')}, ${escapeHtml(topic.date || '')}</div>`;
+      }
+
       const finalDisplayText = query ? highlightText(displayText, query) : escapeHtml(displayText);
+
+      const canEdit = !isPromoFileTopic;
 
       const html = `
         ${topanHtml}
@@ -1190,8 +1462,11 @@
         <div class="variant-card fade-container">
           <div class="variant-text">${finalDisplayText.replace(/\n/g, '<br>')}</div>
           <div class="copy-wrapper">
+            ${canEdit ? `<button class="edit-btn" id="editVariantBtn">✏️ Редактировать</button>` : ''}
+            ${canEdit ? `<button class="edit-btn" id="deleteTopicBtn" style="color:var(--primary-red);">🗑 Удалить тему</button>` : ''}
             <button class="copy-btn" data-text="${escapeHtml(displayText)}">📋 Копировать</button>
           </div>
+          ${metaHtml}
         </div>
       `;
       templatesContainer.innerHTML = html;
@@ -1238,6 +1513,20 @@
           }).catch(() => alert('Не удалось скопировать текст'));
         });
       }
+
+      const editVariantBtn = document.getElementById('editVariantBtn');
+      if (editVariantBtn) {
+        editVariantBtn.addEventListener('click', () => {
+          openEditModal(topic, currentVariantIndex, displayText);
+        });
+      }
+
+      const deleteTopicBtnEl = document.getElementById('deleteTopicBtn');
+      if (deleteTopicBtnEl) {
+        deleteTopicBtnEl.addEventListener('click', () => {
+          openDeleteModal(topic);
+        });
+      }
     }
 
     function showToastMessage(msg) {
@@ -1263,28 +1552,28 @@
       dropdownBtn.classList.remove('open');
     });
 
-    document.querySelectorAll('.dropdown-item').forEach(item => {
-      item.addEventListener('click', () => {
-        const value = item.dataset.value;
-        const name = item.textContent.trim();
-        currentRegion = value;
-        selectedRegionSpan.textContent = name;
-        document.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('active'));
-        item.classList.add('active');
-        dropdownMenu.classList.remove('open');
-        dropdownBtn.classList.remove('open');
+    dropdownMenu.addEventListener('click', (e) => {
+      const item = e.target.closest('.dropdown-item');
+      if (!item) return;
+      const value = item.dataset.value;
+      const name = item.textContent.trim();
+      currentRegion = value;
+      selectedRegionSpan.textContent = name;
+      dropdownMenu.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('active'));
+      item.classList.add('active');
+      dropdownMenu.classList.remove('open');
+      dropdownBtn.classList.remove('open');
 
-        if (currentRegion === 'ekb') {
-          topAnEnabled = true;
-          updateTopAnStatus();
-        } else {
-          topAnEnabled = false;
-          updateTopAnStatus();
-        }
-        currentTopicIndex = 0;
-        currentVariantIndex = 0;
-        renderTopics();
-      });
+      if (currentRegion === 'ekb') {
+        topAnEnabled = true;
+        updateTopAnStatus();
+      } else {
+        topAnEnabled = false;
+        updateTopAnStatus();
+      }
+      currentTopicIndex = 0;
+      currentVariantIndex = 0;
+      renderTopics();
     });
 
     // ---------- Пасхалки ----------
@@ -1458,6 +1747,251 @@
     }
 
     // ============================================================
+    // ДОБАВИТЬ ШАБЛОН
+    // ============================================================
+    const addTemplateBtn = document.getElementById('addTemplateBtn');
+    const addTemplateModal = document.getElementById('addTemplateModal');
+    const addTemplateModalClose = document.getElementById('addTemplateModalClose');
+    const addTemplateForm = document.getElementById('addTemplateForm');
+    const atSubmitBtn = document.getElementById('atSubmitBtn');
+    const addTemplateResult = document.getElementById('addTemplateResult');
+
+    addTemplateBtn.addEventListener('click', () => {
+      addTemplateForm.reset();
+      ['atStageGroup','atRegionGroup','atAuthorGroup','atTopicGroup','atTextGroup'].forEach(id => document.getElementById(id).classList.remove('error'));
+      addTemplateResult.innerHTML = '';
+      addTemplateModal.style.display = 'flex';
+    });
+    addTemplateModalClose.onclick = () => addTemplateModal.style.display = 'none';
+    addTemplateModal.onclick = (e) => { if (e.target === addTemplateModal) addTemplateModal.style.display = 'none'; };
+
+    function validateSelect(field, group) {
+      if (!field.value) { group.classList.add('error'); return false; }
+      group.classList.remove('error'); return true;
+    }
+    function validateText(field, group) {
+      if (!field.value.trim()) { group.classList.add('error'); return false; }
+      group.classList.remove('error'); return true;
+    }
+
+    addTemplateForm.onsubmit = function(e) {
+      e.preventDefault();
+      if (!TEMPLATES_API_URL || TEMPLATES_API_URL.indexOf('https://script.google.com/macros/s/AKfycbxB7yxRPphkO-hy_V4dN3oPyeY__wj_YwrvWKs35bVX2EjdafmjAfS-V2EpMq1jaEfF/exec') === 0) {
+        addTemplateResult.innerHTML = '<p style="color:var(--primary-red);">⚠️ Общее хранилище ещё не настроено. Обратитесь к администратору инструмента.</p>';
+        return;
+      }
+      const stageEl = document.getElementById('atStage');
+      const regionEl = document.getElementById('atRegion');
+      const authorEl = document.getElementById('atAuthor');
+      const topicEl = document.getElementById('atTopic');
+      const textEl = document.getElementById('atText');
+
+      const ok1 = validateSelect(stageEl, document.getElementById('atStageGroup'));
+      const ok2 = validateSelect(regionEl, document.getElementById('atRegionGroup'));
+      const ok3 = validateText(authorEl, document.getElementById('atAuthorGroup'));
+      const ok4 = validateText(topicEl, document.getElementById('atTopicGroup'));
+      const ok5 = validateText(textEl, document.getElementById('atTextGroup'));
+      if (!ok1 || !ok2 || !ok3 || !ok4 || !ok5) return;
+
+      atSubmitBtn.disabled = true;
+      const nowStr = new Date().toLocaleString('ru-RU');
+      const payload = {
+        recordType: 'new_topic',
+        stage: stageEl.value,
+        region: regionEl.value,
+        author: authorEl.value.trim(),
+        topic: topicEl.value.trim(),
+        text: textEl.value,
+        date: nowStr
+      };
+
+      sendToCloud(payload).then(() => {
+        cloudCustomTopics.push({
+          stage: payload.stage, region: payload.region, name: payload.topic,
+          text: payload.text, author: payload.author, date: payload.date
+        });
+        addTemplateResult.innerHTML = '<p style="color:green;">✅ Шаблон добавлен и виден всем сотрудникам!</p>';
+        renderStages();
+        setTimeout(() => { addTemplateModal.style.display = 'none'; addTemplateResult.innerHTML=''; atSubmitBtn.disabled = false; }, 1500);
+      }).catch(() => {
+        addTemplateResult.innerHTML = '<p style="color:var(--primary-red);">⚠️ Не удалось сохранить. Проверьте соединение и попробуйте ещё раз.</p>';
+        atSubmitBtn.disabled = false;
+      });
+    };
+
+    // ============================================================
+    // РЕДАКТИРОВАТЬ ШАБЛОН
+    // ============================================================
+    const editTemplateModal = document.getElementById('editTemplateModal');
+    const editTemplateModalClose = document.getElementById('editTemplateModalClose');
+    const editTemplateForm = document.getElementById('editTemplateForm');
+    const etSubmitBtn = document.getElementById('etSubmitBtn');
+    const editTemplateResult = document.getElementById('editTemplateResult');
+    let editContext = null; // { stage, topicName, variantIndex, region }
+
+    function openEditModal(topic, variantIndex, currentText) {
+      editContext = { stage: currentStage, topicName: topic.name, variantIndex: variantIndex, region: currentRegion };
+      document.getElementById('etAuthor').value = '';
+      document.getElementById('etText').value = currentText;
+      ['etAuthorGroup','etTextGroup'].forEach(id => document.getElementById(id).classList.remove('error'));
+      editTemplateResult.innerHTML = '';
+      editTemplateModal.style.display = 'flex';
+    }
+    editTemplateModalClose.onclick = () => editTemplateModal.style.display = 'none';
+    editTemplateModal.onclick = (e) => { if (e.target === editTemplateModal) editTemplateModal.style.display = 'none'; };
+
+    editTemplateForm.onsubmit = function(e) {
+      e.preventDefault();
+      if (!TEMPLATES_API_URL || TEMPLATES_API_URL.indexOf('https://script.google.com/macros/s/AKfycbxB7yxRPphkO-hy_V4dN3oPyeY__wj_YwrvWKs35bVX2EjdafmjAfS-V2EpMq1jaEfF/exec') === 0) {
+        editTemplateResult.innerHTML = '<p style="color:var(--primary-red);">⚠️ Общее хранилище ещё не настроено. Обратитесь к администратору инструмента.</p>';
+        return;
+      }
+      const authorEl = document.getElementById('etAuthor');
+      const textEl = document.getElementById('etText');
+      const ok1 = validateText(authorEl, document.getElementById('etAuthorGroup'));
+      const ok2 = validateText(textEl, document.getElementById('etTextGroup'));
+      if (!ok1 || !ok2) return;
+
+      etSubmitBtn.disabled = true;
+      const nowStr = new Date().toLocaleString('ru-RU');
+      const payload = {
+        recordType: 'edit',
+        stage: editContext.stage,
+        topic: editContext.topicName,
+        variantIndex: editContext.variantIndex,
+        region: editContext.region,
+        author: authorEl.value.trim(),
+        text: textEl.value,
+        date: nowStr
+      };
+
+      sendToCloud(payload).then(() => {
+        cloudEdits[editKey(payload.stage, payload.topic, payload.variantIndex, payload.region)] = payload;
+        editTemplateResult.innerHTML = '<p style="color:green;">✅ Изменения сохранены и видны всем сотрудникам!</p>';
+        renderTemplates();
+        setTimeout(() => { editTemplateModal.style.display = 'none'; editTemplateResult.innerHTML=''; etSubmitBtn.disabled = false; }, 1500);
+      }).catch(() => {
+        editTemplateResult.innerHTML = '<p style="color:var(--primary-red);">⚠️ Не удалось сохранить. Проверьте соединение и попробуйте ещё раз.</p>';
+        etSubmitBtn.disabled = false;
+      });
+    };
+
+    // ============================================================
+    // УДАЛИТЬ ТЕМУ
+    // ============================================================
+    const deleteTemplateModal = document.getElementById('deleteTemplateModal');
+    const deleteTemplateModalClose = document.getElementById('deleteTemplateModalClose');
+    const deleteTemplateForm = document.getElementById('deleteTemplateForm');
+    const dtSubmitBtn = document.getElementById('dtSubmitBtn');
+    const deleteTemplateResult = document.getElementById('deleteTemplateResult');
+    let deleteContext = null; // { stage, topicName, region }
+
+    function openDeleteModal(topic) {
+      deleteContext = { stage: currentStage, topicName: topic.name, region: currentRegion };
+      document.getElementById('dtAuthor').value = '';
+      document.getElementById('dtAuthorGroup').classList.remove('error');
+      deleteTemplateResult.innerHTML = '';
+      deleteTemplateModal.style.display = 'flex';
+    }
+    deleteTemplateModalClose.onclick = () => deleteTemplateModal.style.display = 'none';
+    deleteTemplateModal.onclick = (e) => { if (e.target === deleteTemplateModal) deleteTemplateModal.style.display = 'none'; };
+
+    deleteTemplateForm.onsubmit = function(e) {
+      e.preventDefault();
+      if (!TEMPLATES_API_URL || TEMPLATES_API_URL.indexOf('https://script.google.com/macros/s/AKfycbxB7yxRPphkO-hy_V4dN3oPyeY__wj_YwrvWKs35bVX2EjdafmjAfS-V2EpMq1jaEfF/exec') === 0) {
+        deleteTemplateResult.innerHTML = '<p style="color:var(--primary-red);">⚠️ Общее хранилище ещё не настроено. Обратитесь к администратору инструмента.</p>';
+        return;
+      }
+      const authorEl = document.getElementById('dtAuthor');
+      const ok = validateText(authorEl, document.getElementById('dtAuthorGroup'));
+      if (!ok) return;
+
+      dtSubmitBtn.disabled = true;
+      const nowStr = new Date().toLocaleString('ru-RU');
+      const payload = {
+        recordType: 'delete_topic',
+        stage: deleteContext.stage,
+        topic: deleteContext.topicName,
+        region: deleteContext.region,
+        author: authorEl.value.trim(),
+        date: nowStr
+      };
+
+      sendToCloud(payload).then(() => {
+        cloudDeletedTopics.add(deleteTopicKey(payload.stage, payload.topic, payload.region));
+        deleteTemplateResult.innerHTML = '<p style="color:green;">✅ Тема удалена у всех сотрудников.</p>';
+        currentTopicIndex = 0;
+        currentVariantIndex = 0;
+        renderTopics();
+        setTimeout(() => { deleteTemplateModal.style.display = 'none'; deleteTemplateResult.innerHTML=''; dtSubmitBtn.disabled = false; }, 1500);
+      }).catch(() => {
+        deleteTemplateResult.innerHTML = '<p style="color:var(--primary-red);">⚠️ Не удалось сохранить. Проверьте соединение и попробуйте ещё раз.</p>';
+        dtSubmitBtn.disabled = false;
+      });
+    };
+
+    // ============================================================
+    // ДОБАВИТЬ РЕГИОН
+    // ============================================================
+    const addRegionBtn = document.getElementById('addRegionBtn');
+    const addRegionModal = document.getElementById('addRegionModal');
+    const addRegionModalClose = document.getElementById('addRegionModalClose');
+    const addRegionForm = document.getElementById('addRegionForm');
+    const arSubmitBtn = document.getElementById('arSubmitBtn');
+    const addRegionResult = document.getElementById('addRegionResult');
+
+    addRegionBtn.addEventListener('click', () => {
+      addRegionForm.reset();
+      ['arNameGroup','arCodeGroup','arAuthorGroup'].forEach(id => document.getElementById(id).classList.remove('error'));
+      addRegionResult.innerHTML = '';
+      addRegionModal.style.display = 'flex';
+    });
+    addRegionModalClose.onclick = () => addRegionModal.style.display = 'none';
+    addRegionModal.onclick = (e) => { if (e.target === addRegionModal) addRegionModal.style.display = 'none'; };
+
+    addRegionForm.onsubmit = function(e) {
+      e.preventDefault();
+      if (!TEMPLATES_API_URL || TEMPLATES_API_URL.indexOf('https://script.google.com/macros/s/AKfycbxB7yxRPphkO-hy_V4dN3oPyeY__wj_YwrvWKs35bVX2EjdafmjAfS-V2EpMq1jaEfF/exec') === 0) {
+        addRegionResult.innerHTML = '<p style="color:var(--primary-red);">⚠️ Общее хранилище ещё не настроено. Обратитесь к администратору инструмента.</p>';
+        return;
+      }
+      const nameEl = document.getElementById('arName');
+      const codeEl = document.getElementById('arCode');
+      const authorEl = document.getElementById('arAuthor');
+      const ok1 = validateText(nameEl, document.getElementById('arNameGroup'));
+      let codeVal = codeEl.value.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+      const ok2 = codeVal.length > 0;
+      document.getElementById('arCodeGroup').classList.toggle('error', !ok2);
+      const ok3 = validateText(authorEl, document.getElementById('arAuthorGroup'));
+      if (!ok1 || !ok2 || !ok3) return;
+
+      if (dropdownMenu.querySelector(`[data-value="${codeVal}"]`)) {
+        addRegionResult.innerHTML = '<p style="color:var(--primary-red);">⚠️ Регион с таким кодом уже существует, выберите другой код.</p>';
+        return;
+      }
+
+      arSubmitBtn.disabled = true;
+      const nowStr = new Date().toLocaleString('ru-RU');
+      const payload = {
+        recordType: 'new_region',
+        code: codeVal,
+        name: nameEl.value.trim(),
+        author: authorEl.value.trim(),
+        date: nowStr
+      };
+
+      sendToCloud(payload).then(() => {
+        cloudRegions.push(payload);
+        renderDynamicRegions();
+        addRegionResult.innerHTML = '<p style="color:green;">✅ Регион добавлен и доступен всем сотрудникам!</p>';
+        setTimeout(() => { addRegionModal.style.display = 'none'; addRegionResult.innerHTML=''; arSubmitBtn.disabled = false; }, 1500);
+      }).catch(() => {
+        addRegionResult.innerHTML = '<p style="color:var(--primary-red);">⚠️ Не удалось сохранить. Проверьте соединение и попробуйте ещё раз.</p>';
+        arSubmitBtn.disabled = false;
+      });
+    };
+
+    // ============================================================
     // ОБРАТНАЯ СВЯЗЬ (все поля обязательные)
     // ============================================================
     const fbBtn = document.getElementById('feedbackButton');
@@ -1588,6 +2122,7 @@
     bindSettings();
     applySettings();
     renderStages();
+    loadCloudData();
     document.getElementById('lastUpdated').textContent = `Обновлено: ${LAST_UPDATED}`;
   </script>
 </body>
