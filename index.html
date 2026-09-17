@@ -1163,9 +1163,6 @@
 
     // ================================================================
     // 2.1 ОБЩЕЕ ХРАНИЛИЩЕ ШАБЛОНОВ (Google Apps Script Web App)
-    // Замените строку ниже на URL вашего развернутого веб-приложения
-    // (см. инструкцию по настройке). Пока URL не указан, кнопки
-    // "Добавить шаблон" / "Редактировать" будут показывать предупреждение.
     // ================================================================
     const TEMPLATES_API_URL = 'https://script.google.com/macros/s/AKfycbxB7yxRPphkO-hy_V4dN3oPyeY__wj_YwrvWKs35bVX2EjdafmjAfS-V2EpMq1jaEfF/exec';
     // ================================================================
@@ -1461,7 +1458,7 @@
     let topAnEnabled = false;
 
     // ---- Общие (облачные) данные: новые темы, правки, удаления, регионы ----
-    let cloudCustomTopics = [];   // [{stage, region, name, text, author, date}]
+    let cloudCustomTopics = [];   // [{stage, region, name, parentId, templates:[...], author, date}]
     let cloudEdits = {};          // key -> {text, author, date}
     let cloudDeletedTopics = new Set(); // set of "stage|||topic|||region"
     let cloudRegions = [];        // [{code, name, author, date}]
@@ -1551,7 +1548,7 @@ let faqQuill = null;
     const dropdownMenu = document.getElementById('dropdownMenu');
     const selectedRegionSpan = document.getElementById('selectedRegion');
 
-       function getCustomTopicsForStage(stage) {
+    function getCustomTopicsForStage(stage) {
       return cloudCustomTopics
         .filter(t => t.stage === stage)
         .filter(t => !t.region || t.region === 'all' || t.region === currentRegion)
@@ -1989,13 +1986,6 @@ async function openFaqModal() {
     return;
   }
 
-  /**
-   * Перед открытием обновляем данные с сервера.
-   *
-   * Это важно:
-   * если другой менеджер уже добавил запись,
-   * сотрудник увидит её при следующем открытии FAQ.
-   */
   try {
 
     if (TEMPLATES_API_URL) {
@@ -2129,9 +2119,6 @@ function renderFaqList() {
       'faq-card-content';
 
 
-    /**
-     * Обязательно очищаем HTML перед выводом.
-     */
     const safeHtml =
       window.DOMPurify
         ? DOMPurify.sanitize(item.contentHtml || '')
@@ -2523,10 +2510,6 @@ faqForm.addEventListener(
       await sendToCloud(payload);
 
 
-      /**
-       * После успешного сохранения
-       * заново загружаем FAQ.
-       */
       const res =
         await fetch(TEMPLATES_API_URL + '?t=' + Date.now());
 
@@ -2611,9 +2594,6 @@ async function deleteFaqItem(item) {
     });
 
 
-    /**
-     * Перезагружаем данные после удаления.
-     */
     const res =
       await fetch(TEMPLATES_API_URL + '?t=' + Date.now());
 
@@ -2709,30 +2689,32 @@ initFaqEditor();
       dropdownBtn.classList.remove('open');
     });
 
+    function selectRegion(regionCode) {
+      const item = dropdownMenu.querySelector(`[data-value="${regionCode}"]`);
+      if (!item) return false;
+      currentRegion = regionCode;
+      selectedRegionSpan.textContent = item.textContent.trim();
+      dropdownMenu.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('active'));
+      item.classList.add('active');
+      if (currentRegion === 'ekb') {
+        topAnEnabled = true;
+      } else {
+        topAnEnabled = false;
+      }
+      return true;
+    }
+
     dropdownMenu.addEventListener('click', (e) => {
       const item = e.target.closest('.dropdown-item');
       if (!item) return;
-      const value = item.dataset.value;
-      const name = item.textContent.trim();
-      currentRegion = value;
-      selectedRegionSpan.textContent = name;
-      dropdownMenu.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('active'));
-      item.classList.add('active');
+      selectRegion(item.dataset.value);
       dropdownMenu.classList.remove('open');
       dropdownBtn.classList.remove('open');
-
-      if (currentRegion === 'ekb') {
-        topAnEnabled = true;
-        updateTopAnStatus();
-      } else {
-        topAnEnabled = false;
-        updateTopAnStatus();
-      }
+      updateTopAnStatus();
       currentTopicIndex = 0;
-currentVariantIndex = 0;
-
-renderTopics();
-renderFaqRegionButton();
+      currentVariantIndex = 0;
+      renderTopics();
+      renderFaqRegionButton();
     });
 
     // ---------- Пасхалки ----------
@@ -2964,9 +2946,29 @@ renderFaqRegionButton();
         date: nowStr
       };
 
-        sendToCloud(payload).then(() => {
+      sendToCloud(payload).then(() => {
         loadCloudData().then(() => {
-          addTemplateResult.innerHTML = '<p style="color:green;">✅ Шаблон добавлен (3 варианта) и виден всем сотрудникам!</p>';
+          // ---- ФИКС: переключаемся на этап и регион нового шаблона,
+          // чтобы он сразу стал виден на странице, а не только в таблице ----
+          currentStage = payload.stage;
+          if (payload.region && payload.region !== 'all') {
+            selectRegion(payload.region);
+            updateTopAnStatus();
+          }
+          currentTopicIndex = 0;
+          currentVariantIndex = 0;
+          renderStages();
+          renderFaqRegionButton();
+
+          const topicsNow = getFilteredTopics();
+          const idx = topicsNow.findIndex(t => t.isCustom && t.name === payload.topic);
+          if (idx > -1) {
+            currentTopicIndex = idx;
+            renderTopics();
+            renderTemplates();
+          }
+
+          addTemplateResult.innerHTML = '<p style="color:green;">✅ Шаблон добавлен (3 варианта) и открыт ниже.</p>';
           setTimeout(() => { addTemplateModal.style.display = 'none'; addTemplateResult.innerHTML=''; atSubmitBtn.disabled = false; }, 1500);
         });
       }).catch(() => {
@@ -2983,10 +2985,10 @@ renderFaqRegionButton();
     const editTemplateForm = document.getElementById('editTemplateForm');
     const etSubmitBtn = document.getElementById('etSubmitBtn');
     const editTemplateResult = document.getElementById('editTemplateResult');
-    let editContext = null; // { stage, topicName, variantIndex, region }
+    let editContext = null; // { stage, topicName, variantIndex, region, parentId }
 
     function openEditModal(topic, variantIndex, currentText) {
-            editContext = {
+      editContext = {
         stage: currentStage,
         topicName: topic.name,
         variantIndex: variantIndex,
@@ -3016,7 +3018,7 @@ renderFaqRegionButton();
 
       etSubmitBtn.disabled = true;
       const nowStr = new Date().toLocaleString('ru-RU');
-            const payload = {
+      const payload = {
         recordType: 'edit',
         stage: editContext.stage,
         topic: editContext.topicName,
@@ -3188,7 +3190,6 @@ renderFaqRegionButton();
     fbForm.onsubmit = function(e) {
       e.preventDefault();
 
-      // Валидация всех полей
       const fio = document.getElementById('fio');
       const fioGroup = fio.closest('.feedback-form-group');
       const isFioValid = validateRequired(fio, fioGroup);
@@ -3206,9 +3207,6 @@ renderFaqRegionButton();
         dislike: dislikeTextarea.value.trim(),
         suggestion: suggestionTextarea.value.trim()
       };
-
-      console.log('📤 Отправка отзыва:', formData);
-      console.log('🔑 ID полей:', { fio: FORM_ENTRY_FIO, like: FORM_ENTRY_LIKE, dislike: FORM_ENTRY_DISLIKE, suggestion: FORM_ENTRY_SUGGESTION });
 
       const form = document.createElement('form');
       form.method = 'POST';
@@ -3266,7 +3264,6 @@ renderFaqRegionButton();
               if (form.parentNode) document.body.removeChild(form);
             }, 3000);
           }).catch(err => {
-            console.warn('Ошибка при отправке через fetch:', err);
             fbRes.innerHTML = '<p style="color:orange;">⚠️ Отзыв не удалось отправить. Попробуйте позже или свяжитесь с поддержкой.</p>';
           });
         }
