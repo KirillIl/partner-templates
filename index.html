@@ -1771,21 +1771,22 @@ let faqQuill = null;
 
       const finalDisplayText = query ? highlightText(displayText, query) : escapeHtml(displayText);
 
-      const canEdit = !isPromoFileTopic;
+      const canEdit = !isPromoFileTopic;   // текст «Акции файл» редактировать нельзя
+const canDelete = true;              // но удалить можно любую тему
 
-      const html = `
-        ${topanHtml}
-        <div class="variant-selector">${variantButtonsHtml}</div>
-        <div class="variant-card fade-container">
-          <div class="variant-text">${finalDisplayText.replace(/\n/g, '<br>')}</div>
-          <div class="copy-wrapper">
-            ${canEdit ? `<button class="edit-btn" id="editVariantBtn">✏️ Редактировать</button>` : ''}
-            ${canEdit ? `<button class="edit-btn" id="deleteTopicBtn" style="color:var(--primary-red);">🗑 Удалить тему</button>` : ''}
-            <button class="copy-btn" data-text="${escapeHtml(displayText)}">📋 Копировать</button>
-          </div>
-          ${metaHtml}
-        </div>
-      `;
+const html = `
+  ${topanHtml}
+  <div class="variant-selector">${variantButtonsHtml}</div>
+  <div class="variant-card fade-container">
+    <div class="variant-text">${finalDisplayText.replace(/\n/g, '<br>')}</div>
+    <div class="copy-wrapper">
+      ${canEdit ? `<button class="edit-btn" id="editVariantBtn">✏️ Редактировать</button>` : ''}
+      ${canDelete ? `<button class="edit-btn" id="deleteTopicBtn" style="color:var(--primary-red);">🗑 Удалить тему</button>` : ''}
+      <button class="copy-btn" data-text="${escapeHtml(displayText)}">📋 Копировать</button>
+    </div>
+    ${metaHtml}
+  </div>
+`;
       templatesContainer.innerHTML = html;
 
       const card = templatesContainer.querySelector('.variant-card');
